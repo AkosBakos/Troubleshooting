@@ -27,7 +27,7 @@ Start-Transcript -Path $(Join-Path $env:ProgramData "\Microsoft\IntuneManagement
 
 $printers = @()
 $printers += [pscustomobject]@{PrinterName="FollowMe-SW";PrintServer="\\prtl005uni.ictedubs.lan\FollowMe-SW";ADGroup="";Default="1"}
-$printers += [pscustomobject]@{PrinterName="FollowMe-Color";PrintServer="\\prtl005uni.ictedubs.lan\FollowMe-SW";ADGroup="";Default="0"}
+$printers += [pscustomobject]@{PrinterName="FollowMe-Color";PrintServer="\\prtl005uni.ictedubs.lan\FollowMe-Color";ADGroup="";Default="0"}
 
 # Override with your Active Directory Domain Name if you haven't configured the domain name as DHCP option
 $searchRoot = ""
@@ -151,8 +151,9 @@ if (-not (Test-RunningAsSystem)) {
 					Write-Output "Printer not mapped, adding '$($Printer.PrintServer)'"
 					Add-Printer -ConnectionName $Printer.PrintServer
 					if($Printer.Default -eq 1){
-						$printer = Get-CimInstance -Class Win32_Printer -Filter "Name='$($Printer.PrinterServer)'"
-						Invoke-CimMethod -InputObject $printer -MethodName SetDefaultPrinter
+						$PrinterDefault = Get-CimInstance -Class Win32_Printer -Filter 'Name LIKE "%FollowMe-SW%"'
+                        Write-Output "Setting printer as default: '$($PrinterDefault)'"
+						Invoke-CimMethod -InputObject $PrinterDefault -MethodName SetDefaultPrinter
 					}
 				}
 			} else {

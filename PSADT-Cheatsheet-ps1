@@ -16,8 +16,10 @@ cd "$path_to_PSADT_folder_youre_working_from"
 ## *** Examples of exe install***
 Execute-Process -Path '<application>.exe' -Parameters '/quiet' -WaitForMsiExec:$true
 Execute-Process -Path "$dirFiles\DirectX\DXSetup.exe" -Parameters '/silent' -WindowStyle 'Hidden'
+
 #open notepad, don't wait for it to close before proceeding (i.e. continue with script)
 Execute-Process -Path "$envSystemRoot\notepad.exe" -NoWait 
+
 #Execute an .exe, and hide confidential parameters from log file
 $serialisation_params = '-batchmode -quit -serial <aa-bb-cc-dd-ee-ffff11111> -username "<serialisation username>" -password "SuperSecret123"'
 Execute-Process -Path "$envProgramFiles\Application\Serialise.exe" -Parameters "$serialisation_params" -SecureParameters:$True
@@ -25,6 +27,7 @@ Execute-Process -Path "$envProgramFiles\Application\Serialise.exe" -Parameters "
 ##***Example to install an msi***
 Execute-MSI -Action 'Install' -Path "$dirFiles\<application>.msi" -Parameters 'REBOOT=ReallySuppress /QN'
 Execute-MSI -Action 'Install' -Path 'Discovery 2015.1.msi'
+
 #MSI install + transform file
 Execute-MSI -Action 'Install' -Path 'Adobe_Reader_11.0.0_EN.msi' -Transform 'Adobe_Reader_11.0.0_EN_01.mst'
 
@@ -46,7 +49,6 @@ Execute-MSI -Action Uninstall -Path '{5708517C-59A3-45C6-9727-6C06C8595AFD}'
 ## ***Run a vbscript***
 Execute-Process -Path "cscript.exe" -Parameters "$dirFiles\whatever.vbs"
 
-
 ## Copy a file to the correct relative location for all user accounts
 #grabbed from here: http://psappdeploytoolkit.com/forums/topic/copy-file-to-all-users-currently-logged-in-and-for-all-future-users/
 $ProfilePaths = Get-UserProfiles | Select-Object -ExpandProperty 'ProfilePath'
@@ -54,10 +56,22 @@ ForEach ($Profile in $ProfilePaths) {
     Copy-File -Path "$dirFiles\Example\example.ini" -Destination "$Profile\Example\To\Path\"
 }
 
+## Remove a file/folder/registry for all user accounts
+$loggedonUser = Get-LoggedOnUser | select -ExpandProperty UserName
+$TeamsPath = [System.IO.Path]::Combine(‘C:\Users’, $loggedonUser,‘Appdata’, ‘Roaming’, ‘Microsoft’, ‘Teams’)
+Remove-File -Path “$TeamsPath\Cache*”
+
+$ProfilePaths = Get-UserProfiles | Select-Object -ExpandProperty 'ProfilePath' 
+        foreach ($Profile in $ProfilePaths ){
+                Remove-Folder -Path "$Profile\appdata\Local\Microsoft\Teams"
+                Remove-RegistryKey -Key 'HKCU\Software\Microsoft\Office\Teams'
+              }
+
 ##***Remove registry key***
 #I dont know the right term, but these are to delete the whole 'folder' reg key
 Remove-RegistryKey -Key 'HKEY_LOCAL_MACHINE\SOFTWARE\Macromedia\FlashPlayer\SafeVersions' -Recurse
 Remove-RegistryKey -Key 'HKLM:SOFTWARE\Macromedia\FlashPlayer\SafeVersions' -Recurse
+
 #This is to remove a specific reg key item from within a 'folder'
 Remove-RegistryKey -Key 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run' -Name 'RunAppInstall'
 Remove-RegistryKey -Key 'HKLM:SOFTWARE\Microsoft\Windows\CurrentVersion\Run' -Name 'RunAppInstall'
@@ -144,7 +158,6 @@ Execute-Process -FilePath "regsvr32.exe" -Parameters "/s `"$dirFiles\example\cod
 #HKLM:\SOFTWARE\PSAppDeployToolkit\InstallMarkers\Microsoft_KB2921916_1.0_x64_EN_01
 Set-RegistryKey -Key "$configToolkitRegPath\$appDeployToolkitName\InstallMarkers\$installName"
 
-
 ## While loop pause (incase app installer exits immediately)
 #pause until example reg key
 While(!(test-path -path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{product-code-hereD}")) {
@@ -168,9 +181,11 @@ New-Shortcut -Path "$envCommonStartMenuPrograms\My Shortcut.lnk" `
 #first load the ACL
 $acl_to_modify = "$envProgramData\Example\File.txt"
 $acl = Get-Acl "$acl_to_modify"
+
 #add another entry to the ACL list (in this case, add all users to have full control)
 $ar = New-Object System.Security.AccessControl.FileSystemAccessRule("BUILTIN\Users", "FullControl", "None", "None", "Allow")
 $acl.SetAccessRule($ar)
+
 #re-write the acl on the target file
 Set-Acl "$acl_to_modify" $acl
 

@@ -26,8 +26,8 @@ Start-Transcript -Path $(Join-Path $env:ProgramData "\Microsoft\IntuneManagement
 
 
 $printers = @()
-$printers += [pscustomobject]@{PrinterName="FollowMe-SW";PrintServer="\\prtl005uni.ictedubs.lan\FollowMe-SW";ADGroup="";Default="1"}
-$printers += [pscustomobject]@{PrinterName="FollowMe-Color";PrintServer="\\prtl005uni.ictedubs.lan\FollowMe-Color";ADGroup="";Default="0"}
+$printers += [pscustomobject]@{PrinterName="FollowMe-SW";PrintServer="\\XXX.lan\FollowMe-SW";ADGroup="";Default="1"}
+$printers += [pscustomobject]@{PrinterName="FollowMe-Color";PrintServer="\\XXX.lan\FollowMe-Color";ADGroup="";Default="0"}
 
 # Override with your Active Directory Domain Name if you haven't configured the domain name as DHCP option
 $searchRoot = ""

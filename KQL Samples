@@ -1,0 +1,28 @@
+#The following example will list all users with text messages as their only MFA method:
+SigninLogs
+| where TimeGenerated > ago(30d)
+| where UserType == "Member"
+| mv-expand todynamic(AuthenticationDetails)
+| extend ['Authentication Method'] = tostring(AuthenticationDetails.authenticationMethod)
+| where ['Authentication Method'] !in ("Previously satisfied", "Password", "Other")
+| where isnotempty(['Authentication Method'])
+| summarize
+    ['Distinct MFA Methods Count']=dcount(['Authentication Method']),
+    ['MFA Methods']=make_set(['Authentication Method'])
+    by UserPrincipalName
+//Users with one method only equal to text message
+| where ['Distinct MFA Methods Count'] == 1 and ['MFA Methods'] has "text"
+
+#The KQL query above will give you a starting point for finding users signing in with usernames and passwords only.
+SigninLogs
+| where TimeGenerated > ago(7d)
+| where ResultType == 0
+| where AuthenticationRequirement == "singleFactorAuthentication"
+| summarize ['Single Factor Authentications']=make_set(UserPrincipalName) by AppDisplayName
+| extend ['User Count'] = array_length(['Single Factor Authentications'])
+| order by ['User Count'] desc
+
+https://github.com/reprise99/Sentinel-Queries/tree/main/Azure%20Active%20Directory
+
+#Data Collection Rules
+https://github.com/Kaidja/Microsoft-Sentinel/tree/main/Data%20Collection%20Rules
